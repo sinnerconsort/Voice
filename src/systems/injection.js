@@ -1,5 +1,5 @@
 // Voice Extension - Prompt Injection
-import { setExtensionPrompt, extension_prompt_types } from '../../../../../script.js';
+import { setExtensionPrompt, extension_prompt_types } from '../../../../../../script.js';
 import { INJECTION_ID, TIERS } from '../core/config.js';
 import { chatState, extensionSettings } from '../core/state.js';
 import { getProfile } from './library.js';
