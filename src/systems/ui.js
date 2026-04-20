@@ -105,10 +105,10 @@ export function createPanel() {
         <div id="voice-panel" style="
             display: none;
             position: fixed;
-            bottom: 60px;
+            top: calc(var(--topBarBlockSize, 40px) + 8px);
             right: 8px;
             width: min(360px, calc(100vw - 16px));
-            max-height: 70vh;
+            max-height: calc(100vh - var(--topBarBlockSize, 40px) - 80px);
             background: var(--SmartThemeBlurTintColor, #1a1a2e);
             border: 1px solid var(--SmartThemeBorderColor, #444);
             border-radius: 12px;
@@ -147,7 +147,7 @@ export function createPanel() {
             <!-- Tab Content -->
             <div id="voice-content" style="
                 overflow-y: auto;
-                max-height: calc(70vh - 90px);
+                max-height: calc(100vh - var(--topBarBlockSize, 40px) - 180px);
                 padding: 10px;
             ">
                 <div id="voice-tab-stacks"></div>
