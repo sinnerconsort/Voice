@@ -105,10 +105,10 @@ export function createPanel() {
         <div id="voice-panel" style="
             display: none;
             position: fixed;
-            top: calc(var(--topBarBlockSize, 40px) + 8px);
+            top: 50px;
             right: 8px;
             width: min(360px, calc(100vw - 16px));
-            max-height: calc(100vh - var(--topBarBlockSize, 40px) - 80px);
+            max-height: calc(100vh - 120px);
             background: var(--SmartThemeBlurTintColor, #1a1a2e);
             border: 1px solid var(--SmartThemeBorderColor, #444);
             border-radius: 12px;
@@ -129,8 +129,9 @@ export function createPanel() {
             ">
                 <span style="font-weight: 600; font-size: 14px;">🎙️ Voice</span>
                 <div id="voice-active-label" style="font-size: 11px; opacity: 0.7; flex: 1; text-align: center; padding: 0 8px;"></div>
-                <div style="display: flex; gap: 6px;">
-                    <span id="voice-clear-btn" title="Clear all" style="cursor: pointer; font-size: 14px; opacity: 0.6;">✖</span>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <span id="voice-clear-btn" title="Clear all selections" style="cursor: pointer; font-size: 12px; opacity: 0.5;">🗑️</span>
+                    <span id="voice-close-btn" title="Close" style="cursor: pointer; font-size: 16px; opacity: 0.7; padding: 2px 4px;">✕</span>
                 </div>
             </div>
 
@@ -147,7 +148,7 @@ export function createPanel() {
             <!-- Tab Content -->
             <div id="voice-content" style="
                 overflow-y: auto;
-                max-height: calc(100vh - var(--topBarBlockSize, 40px) - 180px);
+                max-height: calc(100vh - 220px);
                 padding: 10px;
             ">
                 <div id="voice-tab-stacks"></div>
@@ -157,12 +158,17 @@ export function createPanel() {
         </div>
     `);
 
-    $('#form_sheld').append(panel);
+    $('body').append(panel);
 
     // Tab switching
     panel.find('.voice-tab').on('click', function() {
         const tab = $(this).data('tab');
         switchTab(tab);
+    });
+
+    // Close button
+    $('#voice-close-btn').on('click', () => {
+        togglePanel();
     });
 
     // Clear button
