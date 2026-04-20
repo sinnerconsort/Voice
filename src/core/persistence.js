@@ -1,6 +1,6 @@
 // Voice Extension - Persistence
-import { extension_settings } from '../../../../extensions.js';
-import { chat_metadata, saveSettingsDebounced, saveChatDebounced } from '../../../../../script.js';
+import { extension_settings } from '../../../../../extensions.js';
+import { chat_metadata, saveSettingsDebounced, saveChatDebounced } from '../../../../../../script.js';
 import { EXT_ID } from './config.js';
 import {
     extensionSettings, setExtensionSettings,
