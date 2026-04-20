@@ -1,0 +1,71 @@
+/* Voice Extension - Styles */
+
+/* FAB hover effect */
+#voice-fab:hover {
+    transform: scale(1.05);
+    box-shadow: 0 3px 12px rgba(0,0,0,0.5);
+}
+
+/* Panel slide-in */
+#voice-panel {
+    animation: voice-slide-in 0.2s ease-out;
+}
+
+@keyframes voice-slide-in {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Profile chips hover */
+.voice-profile-chip:hover {
+    filter: brightness(1.2);
+}
+
+/* Stack cards hover */
+.voice-stack-card:hover {
+    filter: brightness(1.1);
+}
+
+/* Scrollbar styling for panel */
+#voice-content::-webkit-scrollbar {
+    width: 4px;
+}
+
+#voice-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+#voice-content::-webkit-scrollbar-thumb {
+    background: var(--SmartThemeBorderColor, #444);
+    border-radius: 2px;
+}
+
+/* Tab hover */
+.voice-tab:hover {
+    background: rgba(255,255,255,0.05);
+}
+
+/* Save dialog backdrop */
+#voice-save-dialog input:focus {
+    outline: none;
+    border-color: var(--SmartThemeQuoteColor, #e94560);
+}
+
+/* Menu button consistency */
+#voice-panel .menu_button {
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--SmartThemeBorderColor, #444);
+    border-radius: 6px;
+    color: inherit;
+    cursor: pointer;
+}
+
+#voice-panel .menu_button:hover {
+    background: rgba(0,0,0,0.5);
+}
