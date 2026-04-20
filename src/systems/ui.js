@@ -40,7 +40,7 @@ export function createFAB() {
         " title="Voice">🎙️</div>
     `);
 
-    $('#form_sheld').append(fab);
+    $('body').append(fab);
     fab.on('click', togglePanel);
     makeFABDraggable(fab[0]);
 }
