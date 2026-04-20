@@ -10,18 +10,12 @@
 
 import {
     getContext,
-    renderExtensionTemplateAsync,
     extension_settings
 } from '../../../extensions.js';
 
 import {
     eventSource,
-    event_types,
-    saveSettingsDebounced,
-    chat_metadata,
-    saveChatDebounced,
-    setExtensionPrompt,
-    extension_prompt_types
+    event_types
 } from '../../../../script.js';
 
 // Core
