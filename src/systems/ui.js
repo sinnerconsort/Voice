@@ -8,6 +8,7 @@ import {
     clearAll, saveCurrentAsStack, deleteStack, getActiveCombo
 } from './stacks.js';
 import { getInjectionPreview } from './injection.js';
+import { getAutopilotStatus, setAutopilot, isAutopilotAvailable } from './autopilot.js';
 
 // ═══════════════════════════════════════
 // FAB (Floating Action Button)
@@ -130,6 +131,7 @@ export function createPanel() {
                 <span style="font-weight: 600; font-size: 14px;">🎙️ Voice</span>
                 <div id="voice-active-label" style="font-size: 11px; opacity: 0.7; flex: 1; text-align: center; padding: 0 8px;"></div>
                 <div style="display: flex; gap: 10px; align-items: center;">
+                    <span id="voice-autopilot-btn" title="Autopilot: follow Lexicon scene type" style="cursor: pointer; font-size: 14px; opacity: 0.4;">✈️</span>
                     <span id="voice-clear-btn" title="Clear all selections" style="cursor: pointer; font-size: 12px; opacity: 0.5;">🗑️</span>
                     <span id="voice-close-btn" title="Close" style="cursor: pointer; font-size: 16px; opacity: 0.7; padding: 2px 4px;">✕</span>
                 </div>
@@ -178,7 +180,45 @@ export function createPanel() {
         updateFABIndicator();
     });
 
+    // Autopilot toggle
+    $('#voice-autopilot-btn').on('click', () => {
+        const status = getAutopilotStatus();
+        if (!status.enabled && !isAutopilotAvailable()) {
+            toastr.warning('Lexicon isn\'t active — autopilot needs Lexicon v2.1+ for scene detection', '🎙️ Voice', { timeOut: 4500 });
+            return;
+        }
+        setAutopilot(!status.enabled);
+        saveSettings();
+        updateAutopilotButton();
+        toastr.info(
+            status.enabled ? 'Autopilot off — manual control' : 'Autopilot on — Voice follows Lexicon scene changes',
+            '🎙️ Voice', { timeOut: 3000 }
+        );
+    });
+
+    updateAutopilotButton();
     switchTab(extensionSettings.activeTab || 'stacks');
+}
+
+/**
+ * Refresh the autopilot button to reflect current status:
+ * dim ✈️ = off, bright ✈️ = engaged, ⏸️ = paused by manual override.
+ */
+export function updateAutopilotButton() {
+    const btn = $('#voice-autopilot-btn');
+    if (!btn.length) return;
+    const status = getAutopilotStatus();
+
+    if (!status.enabled) {
+        btn.text('✈️').css({ opacity: '0.4', filter: 'grayscale(1)' })
+            .attr('title', 'Autopilot off — tap to follow Lexicon scene type');
+    } else if (status.paused) {
+        btn.text('⏸️').css({ opacity: '0.9', filter: 'none' })
+            .attr('title', `Autopilot paused (manual override) — resumes on scene change${status.sceneLabel ? ` · current: ${status.sceneLabel}` : ''}`);
+    } else {
+        btn.text('✈️').css({ opacity: '1', filter: 'none' })
+            .attr('title', `Autopilot ON${status.sceneLabel ? ` · scene: ${status.sceneLabel}` : ' — waiting for first scene'}`);
+    }
 }
 
 function switchTab(tabName) {
@@ -535,6 +575,7 @@ function renderPreviewTab() {
 
 export function renderAll() {
     updateActiveLabel();
+    updateAutopilotButton();
     const activeTab = extensionSettings.activeTab || 'stacks';
     switch (activeTab) {
         case 'stacks':  renderStacksTab(); break;

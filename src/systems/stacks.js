@@ -1,6 +1,7 @@
 // Voice Extension - Stack Management
 import { extensionSettings, chatState } from '../core/state.js';
 import { saveSettings, saveChatState } from '../core/persistence.js';
+import { pauseForManualOverride } from './autopilot.js';
 
 /**
  * Get all saved stacks.
@@ -23,6 +24,8 @@ export function activateStack(stackId) {
     const stack = getStack(stackId);
     if (!stack) return false;
 
+    pauseForManualOverride();
+
     chatState.activeRegister = stack.register || null;
     chatState.activeTempo = stack.tempo || null;
     chatState.activeTexture = stack.texture || null;
@@ -37,6 +40,7 @@ export function activateStack(stackId) {
  * the user is now in custom mode.
  */
 export function setActiveTier(tier, profileId) {
+    pauseForManualOverride();
     switch (tier) {
         case 'register': chatState.activeRegister = profileId; break;
         case 'tempo':    chatState.activeTempo = profileId; break;
@@ -58,6 +62,7 @@ export function clearTier(tier) {
  * Clear all active selections.
  */
 export function clearAll() {
+    pauseForManualOverride();
     chatState.activeRegister = null;
     chatState.activeTempo = null;
     chatState.activeTexture = null;
