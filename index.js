@@ -31,6 +31,7 @@ import { DEFAULT_STACKS } from './src/core/config.js';
 
 // Systems
 import { injectVoice, clearInjection } from './src/systems/injection.js';
+import { runAutopilot } from './src/systems/autopilot.js';
 import { createFAB, createPanel, renderAll, updateFABIndicator, destroyUI } from './src/systems/ui.js';
 
 // ═══════════════════════════════════════
@@ -98,6 +99,17 @@ function onChatChanged() {
 
 function onGenerationStarted() {
     if (extensionSettings.enabled) {
+        // Autopilot first — if the scene changed, swap the stack so
+        // this generation uses the new voice.
+        try {
+            const swapped = runAutopilot();
+            if (swapped) {
+                renderAll();
+                updateFABIndicator();
+            }
+        } catch (e) {
+            console.warn('[Voice] Autopilot error (continuing with current stack):', e);
+        }
         injectVoice();
     }
 }

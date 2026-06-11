@@ -2,10 +2,13 @@
     "display_name": "Voice",
     "loading_order": 105,
     "requires": [],
-    "optional": ["Lexicon", "Codex"],
+    "optional": [
+        "Lexicon",
+        "Codex"
+    ],
     "js": "index.js",
     "css": "style.css",
     "author": "sinnerconsort",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "homePage": ""
 }
