@@ -1,7 +1,7 @@
 // Voice Extension - Core Configuration
 export const EXT_NAME = 'Voice';
 export const EXT_ID = 'voice';
-export const EXT_VERSION = '1.0.0';
+export const EXT_VERSION = '1.1.0';
 
 // Injection identifier for setExtensionPrompt
 export const INJECTION_ID = 'voice-directive';

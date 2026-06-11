@@ -9,6 +9,9 @@ export let extensionSettings = {
     settingsVersion: 1,
     enabled: true,
 
+    // Autopilot: Lexicon scene type drives full stack swaps
+    autopilot: false,
+
     // Profile libraries (defaults + user-added)
     registers: [],
     tempos: [],
@@ -44,7 +47,11 @@ export let chatState = {
     // History of recent selections for anti-repetition
     recentRegisters: [],
     recentTempos: [],
-    recentTextures: []
+    recentTextures: [],
+
+    // Autopilot tracking
+    lastAutoScene: null,
+    autoPaused: false
 };
 
 // ═══════════════════════════════════════
@@ -71,6 +78,8 @@ export function resetChatState() {
         activeStackId: null,
         recentRegisters: [],
         recentTempos: [],
-        recentTextures: []
+        recentTextures: [],
+        lastAutoScene: null,
+        autoPaused: false
     };
 }
