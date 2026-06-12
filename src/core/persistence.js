@@ -99,3 +99,42 @@ export function initStacks(defaultStacks) {
         saveSettings();
     }
 }
+
+// ═══════════════════════════════════════
+// MIGRATIONS
+// ═══════════════════════════════════════
+
+/**
+ * v1.2.1 — append the six new default profiles + two stacks to existing
+ * installs. Version-gated and id-checked, so user edits are untouched and
+ * deliberately deleted OLD defaults are never resurrected (only ids
+ * introduced in this migration are eligible).
+ */
+export function migrateLibraries(defaultRegisters, defaultTempos, defaultTextures, defaultStacks) {
+    const NEW_IDS_V2 = {
+        registers: ['havoc', 'fathom'],
+        textures: ['crosstalk', 'genius_loci', 'cold_arithmetic', 'undertow'],
+        stacks: ['deep_water', 'donnybrook'],
+    };
+
+    if ((extensionSettings.settingsVersion || 1) >= 2) return;
+
+    let added = 0;
+    const appendMissing = (list, defaults, ids) => {
+        for (const id of ids) {
+            if (list.find(x => x.id === id)) continue;
+            const def = defaults.find(x => x.id === id);
+            if (def) { list.push({ ...def }); added++; }
+        }
+    };
+
+    appendMissing(extensionSettings.registers, defaultRegisters, NEW_IDS_V2.registers);
+    appendMissing(extensionSettings.textures, defaultTextures, NEW_IDS_V2.textures);
+    appendMissing(extensionSettings.stacks, defaultStacks, NEW_IDS_V2.stacks);
+
+    extensionSettings.settingsVersion = 2;
+    saveSettings();
+    if (added && typeof toastr !== 'undefined') {
+        toastr.info(`Library grew: ${added} new profiles/stacks (HAVOC, FATHOM, CROSSTALK, GENIUS LOCI, COLD ARITHMETIC, UNDERTOW)`, '🎙️ Voice', { timeOut: 6000 });
+    }
+}

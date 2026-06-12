@@ -1,7 +1,7 @@
 // Voice Extension - Core Configuration
 export const EXT_NAME = 'Voice';
 export const EXT_ID = 'voice';
-export const EXT_VERSION = '1.2.0';
+export const EXT_VERSION = '1.2.1';
 
 // Injection identifier for setExtensionPrompt
 export const INJECTION_ID = 'voice-directive';
@@ -93,5 +93,23 @@ export const DEFAULT_STACKS = [
         tempo: 'crescendo',
         texture: 'foxglove',
         notes: 'Beautiful architecture. Poisonous history.'
-    }
+    },
+    {
+        id: 'deep_water',
+        name: 'Deep Water',
+        icon: '🐚',
+        register: 'fathom',
+        tempo: 'diminuendo',
+        texture: 'undertow',
+        notes: 'The wrongness underneath. Cope by not looking.'
+    },
+    {
+        id: 'donnybrook',
+        name: 'Donnybrook',
+        icon: '🥊',
+        register: 'havoc',
+        tempo: 'pulp',
+        texture: 'somatic_ledger',
+        notes: 'Fists, furniture, geometry. End it fast.'
+    },
 ];
