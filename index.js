@@ -21,7 +21,7 @@ import {
 // Core
 import { EXT_NAME, EXT_ID } from './src/core/config.js';
 import { extensionSettings, chatState } from './src/core/state.js';
-import { loadSettings, saveSettings, loadChatState, saveChatState, initLibraries, initStacks } from './src/core/persistence.js';
+import { loadSettings, saveSettings, loadChatState, saveChatState, initLibraries, initStacks, migrateLibraries } from './src/core/persistence.js';
 
 // Data (defaults)
 import { DEFAULT_REGISTERS } from './src/data/registers.js';
@@ -138,6 +138,7 @@ jQuery(async () => {
         try {
             initLibraries(DEFAULT_REGISTERS, DEFAULT_TEMPOS, DEFAULT_TEXTURES);
             initStacks(DEFAULT_STACKS);
+            migrateLibraries(DEFAULT_REGISTERS, DEFAULT_TEMPOS, DEFAULT_TEXTURES, DEFAULT_STACKS);
         } catch (e) {
             console.error(`[${EXT_NAME}] Library init failed:`, e);
         }
