@@ -20,6 +20,12 @@ export let extensionSettings = {
     // Saved stacks
     stacks: [],
 
+    // Soul palettes (per-world, keyed by character avatar / group id)
+    palettes: {},
+    useSoulDefault: true,            // soul stack fills in when nothing is active
+    paletteCompileProfile: 'current',
+    paletteTokenBudget: 2000,
+
     // UI state
     panelOpen: false,
     activeTab: 'stacks',
@@ -51,7 +57,10 @@ export let chatState = {
 
     // Autopilot tracking
     lastAutoScene: null,
-    autoPaused: false
+    autoPaused: false,
+
+    // Soul palette flavor tracking (sceneChange mode)
+    lastFlavorRegister: null
 };
 
 // ═══════════════════════════════════════
@@ -80,6 +89,7 @@ export function resetChatState() {
         recentTempos: [],
         recentTextures: [],
         lastAutoScene: null,
-        autoPaused: false
+        autoPaused: false,
+        lastFlavorRegister: null
     };
 }
