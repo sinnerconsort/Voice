@@ -94,5 +94,21 @@ export const DEFAULT_REGISTERS = [
         tagline: 'Slice-of-Life / Mundane Epic',
         injection: 'Grocery shopping is supply chain logistics. The PTA meeting is geopolitics. Deadpan on the surface, warm underneath. No one winks at the camera. They genuinely care about the laundry. The commitment IS the comedy. The warmth is real.',
         tags: ['domestic', 'mundane', 'warm', 'deadpan']
-    }
+    },
+    {
+        id: 'havoc',
+        name: 'HAVOC',
+        icon: '🥊',
+        tagline: 'Combat / Kinetic',
+        injection: 'Space is real — count the steps, mark the exits, know where the furniture is. Violence is fast, ugly, and weighted; every blow costs something, every miss redraws the geometry. Track hands. Track distance. Nothing beautiful, everything consequential.',
+        tags: ['combat', 'action', 'kinetic', 'spatial']
+    },
+    {
+        id: 'fathom',
+        name: 'FATHOM',
+        icon: '🌊',
+        tagline: 'Cosmic Wrongness',
+        injection: 'The scale is wrong and nobody says so. Vast things move on schedules that ignore us — the horror is indifference, not malice. Keep the wrongness peripheral: almost-patterns, angles that refuse to add up. The characters cope by not looking. Reward them for not looking.',
+        tags: ['cosmic', 'lovecraft', 'dread', 'indifference', 'scale']
+    },
 ];

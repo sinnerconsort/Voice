@@ -94,5 +94,37 @@ export const DEFAULT_TEXTURES = [
         tagline: 'Beautiful and Poisonous',
         injection: 'The prose is gorgeous — lush, careful, every word chosen — and it\'s describing something awful. The beauty doesn\'t soften it. The beauty makes it worse. The reader can\'t stop because the language is too pretty. That\'s the trap.',
         tags: ['beauty', 'horror', 'lush', 'deceptive']
-    }
+    },
+    {
+        id: 'crosstalk',
+        name: 'CROSSTALK',
+        icon: '💬',
+        tagline: 'Casual Speech',
+        injection: 'People interrupt. They trail off, double back, answer the question before last. Dialogue carries the scene; narration just keeps score. Speech is crooked and alive — verbal tics, half-jokes, the thing almost said. The craft is in the rhythm of talk.',
+        tags: ['dialogue', 'banter', 'casual', 'rhythm']
+    },
+    {
+        id: 'genius_loci',
+        name: 'GENIUS LOCI',
+        icon: '🕯️',
+        tagline: 'The Place Is Awake',
+        injection: 'Rooms hold temperature and grudge; streets remember footsteps. Filter sensation through the location itself — what the walls absorb, what the air refuses. One environmental pulse per beat, specific to THIS place. The setting is a witness, not a backdrop.',
+        tags: ['environment', 'atmosphere', 'shivers', 'place']
+    },
+    {
+        id: 'cold_arithmetic',
+        name: 'COLD ARITHMETIC',
+        icon: '📐',
+        tagline: 'Forensic Precision',
+        injection: 'Measure everything — angles, timings, weights, distances. The scene is evidence. Sentences precise, declarative, unsentimental; conclusions drawn from physical fact. Emotion arrives only as data: elevated pulse, dilated pupils. The truth is a sum. Show the working.',
+        tags: ['forensic', 'precision', 'analytical', 'visual-calculus']
+    },
+    {
+        id: 'undertow',
+        name: 'UNDERTOW',
+        icon: '🌒',
+        tagline: 'Dream Logic',
+        injection: 'Non-sequiturs that are secretly right. Images surface without permission — a smell that means a year, an object that means a person. Let intuition interrupt the literal scene and be vindicated later. The subconscious is a narrator with bad manners and perfect aim.',
+        tags: ['dream', 'intuition', 'inland-empire', 'surreal']
+    },
 ];
