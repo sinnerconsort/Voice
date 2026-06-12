@@ -1,6 +1,6 @@
 // ═══════════════════════════════════════════════════════════════
 // VOICE — Prose Direction Extension for SillyTavern
-// v1.0.0
+// v1.2.0 — soul palettes (per-world calibration)
 //
 // Three-tier prose direction: Register + Tempo + Texture
 // Manual selection with saved stack combos.
@@ -188,7 +188,8 @@ jQuery(async () => {
                 tempos: extensionSettings.tempos,
                 textures: extensionSettings.textures
             }),
-            getStacks: () => extensionSettings.stacks
+            getStacks: () => extensionSettings.stacks,
+            getPalettes: () => extensionSettings.palettes
         };
 
         console.log(`[${EXT_NAME}] ✅ Loaded successfully`);
