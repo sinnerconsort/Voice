@@ -13,6 +13,10 @@ import { extensionSettings, chatState } from '../core/state.js';
 import { saveChatState } from '../core/persistence.js';
 import { TIERS } from '../core/config.js';
 import { getProfile } from './library.js';
+import { getPalette } from './palette.js';
+
+// Lexicon scene type → palette override key
+const SCENE_TO_OVERRIDE = { action: 'violence', intimate: 'intimacy' };
 
 // ═══════════════════════════════════════
 // SCENE → STACK MAPPING
@@ -41,7 +45,7 @@ export const SCENE_STACKS = {
         label: '🔍 Investigation',
     },
     action: {
-        register: 'tripwire',          // suspense, tension
+        register: 'havoc',             // combat, kinetic, spatial
         tempo: 'pulp',                 // fast, sharp, punchy
         texture: 'somatic_ledger',     // body-first, visceral
         label: '⚔️ Action',
@@ -126,16 +130,29 @@ function applySceneStack(sceneType) {
     const map = SCENE_STACKS[sceneType];
     if (!map) return false;
 
-    const reg = getProfile(TIERS.REGISTER, map.register);
-    const tmp = getProfile(TIERS.TEMPO, map.tempo);
-    const tex = getProfile(TIERS.TEXTURE, map.texture);
+    // Soul palette scene overrides: a world's compiled palette may pin one
+    // tier for violence/intimacy scenes (e.g. "violence is slow and visceral"
+    // → texture: somatic_ledger). Override is applied on top of the mapping.
+    const effective = { register: map.register, tempo: map.tempo, texture: map.texture };
+    const overrideKey = SCENE_TO_OVERRIDE[sceneType];
+    const palette = getPalette();
+    if (overrideKey && palette?.sceneOverrides?.[overrideKey]) {
+        const ov = palette.sceneOverrides[overrideKey];
+        for (const type of ['register', 'tempo', 'texture']) {
+            if (ov[type]) effective[type] = ov[type];
+        }
+    }
+
+    const reg = getProfile(TIERS.REGISTER, effective.register);
+    const tmp = getProfile(TIERS.TEMPO, effective.tempo);
+    const tex = getProfile(TIERS.TEXTURE, effective.texture);
 
     // If the entire mapped stack is missing from the library, bail
     if (!reg && !tmp && !tex) return false;
 
-    chatState.activeRegister = reg ? map.register : null;
-    chatState.activeTempo = tmp ? map.tempo : null;
-    chatState.activeTexture = tex ? map.texture : null;
+    chatState.activeRegister = reg ? effective.register : null;
+    chatState.activeTempo = tmp ? effective.tempo : null;
+    chatState.activeTexture = tex ? effective.texture : null;
     chatState.activeStackId = null;
     saveChatState();
     return true;

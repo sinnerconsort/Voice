@@ -9,6 +9,10 @@ import {
 } from './stacks.js';
 import { getInjectionPreview } from './injection.js';
 import { getAutopilotStatus, setAutopilot, isAutopilotAvailable } from './autopilot.js';
+import {
+    SOUL_QUESTIONS, getPalette, setPalette, deletePalette, getEntityName, getEntityKey,
+    compilePalette, computeSoulStack, applySoulStack, getWeight, listConnectionProfiles
+} from './palette.js';
 
 // ═══════════════════════════════════════
 // FAB (Floating Action Button)
@@ -145,6 +149,7 @@ export function createPanel() {
                 <div class="voice-tab" data-tab="stacks" style="flex:1; text-align:center; padding:8px; cursor:pointer; font-size:12px; border-bottom: 2px solid transparent;">📦 Stacks</div>
                 <div class="voice-tab" data-tab="picker" style="flex:1; text-align:center; padding:8px; cursor:pointer; font-size:12px; border-bottom: 2px solid transparent;">🎨 Picker</div>
                 <div class="voice-tab" data-tab="preview" style="flex:1; text-align:center; padding:8px; cursor:pointer; font-size:12px; border-bottom: 2px solid transparent;">👁️ Preview</div>
+                <div class="voice-tab" data-tab="soul" style="flex:1; text-align:center; padding:8px; cursor:pointer; font-size:12px; border-bottom: 2px solid transparent;">✨ Soul</div>
             </div>
 
             <!-- Tab Content -->
@@ -156,6 +161,7 @@ export function createPanel() {
                 <div id="voice-tab-stacks"></div>
                 <div id="voice-tab-picker" style="display:none;"></div>
                 <div id="voice-tab-preview" style="display:none;"></div>
+                <div id="voice-tab-soul" style="display:none;"></div>
             </div>
         </div>
     `);
@@ -233,7 +239,7 @@ function switchTab(tabName) {
         'opacity': '1'
     });
 
-    $('#voice-tab-stacks, #voice-tab-picker, #voice-tab-preview').hide();
+    $('#voice-tab-stacks, #voice-tab-picker, #voice-tab-preview, #voice-tab-soul').hide();
     $(`#voice-tab-${tabName}`).show();
 
     // Render the active tab
@@ -241,6 +247,7 @@ function switchTab(tabName) {
         case 'stacks':  renderStacksTab(); break;
         case 'picker':  renderPickerTab(); break;
         case 'preview': renderPreviewTab(); break;
+        case 'soul':    renderSoulTab(); break;
     }
 }
 
@@ -581,6 +588,7 @@ export function renderAll() {
         case 'stacks':  renderStacksTab(); break;
         case 'picker':  renderPickerTab(); break;
         case 'preview': renderPreviewTab(); break;
+        case 'soul':    renderSoulTab(); break;
     }
 }
 
@@ -617,6 +625,242 @@ export function updateFABIndicator() {
         fab.css('border-color', 'var(--SmartThemeBorderColor, #444)');
     } else {
         fab.css('border-color', 'var(--SmartThemeQuoteColor, #e94560)');
+    }
+}
+
+
+// ═══════════════════════════════════════
+// SOUL TAB (palette interview + card)
+// ═══════════════════════════════════════
+
+const SOUL_BTN = 'background: rgba(255,255,255,0.06); border: 1px solid var(--SmartThemeBorderColor, #444); border-radius: 8px; padding: 7px 10px; font-size: 12px; cursor: pointer; text-align: center;';
+let soulCompiling = false;
+let soulDraft = null;         // compiled-but-unsaved palette
+let soulShowInterview = false;
+
+function weightChips(cat, weights) {
+    const entries = Object.entries(weights?.[cat] || {}).sort((a, b) => b[1] - a[1]);
+    if (!entries.length) return '<span style="opacity:0.4;">—</span>';
+    return entries.map(([id, w]) =>
+        `<span style="display:inline-block; margin:2px; padding:2px 7px; border-radius:9px; font-size:11px; background:${w > 0 ? 'rgba(120,200,120,0.15)' : 'rgba(220,120,120,0.15)'}; border:1px solid var(--SmartThemeBorderColor, #444);">${escapeHtml(id)} ${w > 0 ? '+' : ''}${w}</span>`
+    ).join('');
+}
+
+function renderInterviewForm(palette) {
+    const answers = palette?.answers || {};
+    let html = '';
+    for (const q of SOUL_QUESTIONS) {
+        html += `
+            <div style="margin-bottom:8px;">
+                <div style="font-size:11px; font-weight:600; margin-bottom:2px;">${q.label}</div>
+                <textarea class="voice-soul-answer" data-q="${q.id}" rows="2" placeholder="${escapeHtml(q.hint)}" style="width:100%; box-sizing:border-box; font-size:12px; background:rgba(0,0,0,0.25); color:inherit; border:1px solid var(--SmartThemeBorderColor, #444); border-radius:6px; padding:6px;">${escapeHtml(answers[q.id] || '')}</textarea>
+            </div>`;
+    }
+
+    const profiles = listConnectionProfiles();
+    const selProfile = extensionSettings.paletteCompileProfile || 'current';
+    html += `
+        <div style="display:flex; gap:8px; align-items:center; margin:8px 0; flex-wrap:wrap;">
+            <select id="voice-soul-profile" style="flex:1; min-width:120px; font-size:12px; background:rgba(0,0,0,0.25); color:inherit; border:1px solid var(--SmartThemeBorderColor, #444); border-radius:6px; padding:4px;">
+                <option value="current" ${selProfile === 'current' ? 'selected' : ''}>current profile</option>
+                ${profiles.map(p => `<option value="${escapeHtml(p)}" ${selProfile === p ? 'selected' : ''}>${escapeHtml(p)}</option>`).join('')}
+            </select>
+            <input id="voice-soul-budget" type="number" min="500" step="500" value="${extensionSettings.paletteTokenBudget || 2000}" title="Token budget" style="width:74px; font-size:12px; background:rgba(0,0,0,0.25); color:inherit; border:1px solid var(--SmartThemeBorderColor, #444); border-radius:6px; padding:4px;">
+        </div>
+        <div style="font-size:10px; opacity:0.55; margin-bottom:8px;">Reasoning models spend tokens on hidden thinking first — prefer a non-reasoning utility model (GLM-4.7), or raise the budget to 4000+.</div>
+        <div id="voice-soul-compile" style="${SOUL_BTN} ${soulCompiling ? 'opacity:0.5; pointer-events:none;' : ''}">${soulCompiling ? '⏳ Compiling…' : '✨ Compile palette'}</div>`;
+    return html;
+}
+
+function renderPaletteCard(pal, isDraft) {
+    const soul = computeSoulStack(pal);
+    const soulParts = [soul.register, soul.tempo, soul.texture].filter(Boolean);
+    let html = `
+        <div style="border:1px solid ${isDraft ? 'var(--SmartThemeQuoteColor, #e94560)' : 'var(--SmartThemeBorderColor, #444)'}; border-radius:10px; padding:10px; margin-bottom:10px; background:rgba(0,0,0,0.18);">
+            ${isDraft ? '<div style="font-size:11px; font-weight:600; margin-bottom:6px;">Proposed palette — review before saving</div>' : ''}
+            <div style="font-size:11px; opacity:0.8; margin-bottom:4px;">Flavor (edit freely, ≤2 lines):</div>
+            <input class="voice-soul-flavor" data-i="0" type="text" maxlength="110" value="${escapeHtml(pal.flavor?.[0] || '')}" style="width:100%; box-sizing:border-box; font-size:12px; margin-bottom:4px; background:rgba(0,0,0,0.25); color:inherit; border:1px solid var(--SmartThemeBorderColor, #444); border-radius:6px; padding:5px;">
+            <input class="voice-soul-flavor" data-i="1" type="text" maxlength="110" value="${escapeHtml(pal.flavor?.[1] || '')}" style="width:100%; box-sizing:border-box; font-size:12px; margin-bottom:6px; background:rgba(0,0,0,0.25); color:inherit; border:1px solid var(--SmartThemeBorderColor, #444); border-radius:6px; padding:5px;">
+            <div style="font-size:11px; margin:4px 0;">🎬 ${weightChips('registers', pal.weights)}</div>
+            <div style="font-size:11px; margin:4px 0;">🎵 ${weightChips('tempos', pal.weights)}</div>
+            <div style="font-size:11px; margin:4px 0;">🖋️ ${weightChips('textures', pal.weights)}</div>
+            ${Object.keys(pal.sceneOverrides || {}).length ? `<div style="font-size:11px; margin:4px 0; opacity:0.8;">Overrides: ${escapeHtml(Object.entries(pal.sceneOverrides).map(([k, v]) => `${k}→${Object.values(v)[0]}`).join(', '))}</div>` : ''}
+            <div style="font-size:11px; margin:6px 0 2px; opacity:0.8;">Soul stack: ${soulParts.length ? escapeHtml(soulParts.join(' · ')) : '—'}</div>
+        </div>`;
+
+    if (isDraft) {
+        html += `
+            <div style="display:flex; gap:8px;">
+                <div id="voice-soul-save" style="${SOUL_BTN} flex:1;">💾 Save palette</div>
+                <div id="voice-soul-discard" style="${SOUL_BTN} flex:1;">🗑️ Discard</div>
+            </div>`;
+    } else {
+        const mode = pal.flavorMode || 'always';
+        html += `
+            <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px; flex-wrap:wrap;">
+                <span style="font-size:11px;">Flavor:</span>
+                <select id="voice-soul-flavormode" style="flex:1; font-size:12px; background:rgba(0,0,0,0.25); color:inherit; border:1px solid var(--SmartThemeBorderColor, #444); border-radius:6px; padding:4px;">
+                    <option value="always" ${mode === 'always' ? 'selected' : ''}>every turn</option>
+                    <option value="sceneChange" ${mode === 'sceneChange' ? 'selected' : ''}>on register change</option>
+                    <option value="off" ${mode === 'off' ? 'selected' : ''}>off</option>
+                </select>
+            </div>
+            <label class="checkbox_label" style="display:flex; align-items:center; gap:6px; font-size:12px; margin-bottom:8px;">
+                <input type="checkbox" id="voice-soul-default" ${extensionSettings.useSoulDefault ? 'checked' : ''}>
+                <span>Soul stack fills in when nothing is active</span>
+            </label>
+            <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                <div id="voice-soul-apply" style="${SOUL_BTN} flex:1; min-width:90px;">🎙️ Apply soul stack</div>
+                <div id="voice-soul-edit" style="${SOUL_BTN} flex:1; min-width:90px;">${soulShowInterview ? '▲ Hide answers' : '✏️ Edit answers'}</div>
+                <div id="voice-soul-delete" style="${SOUL_BTN} min-width:44px;" title="Delete palette">🗑️</div>
+            </div>`;
+    }
+    return html;
+}
+
+function renderSoulTab() {
+    const container = $('#voice-tab-soul');
+    if (!container.length) return;
+
+    const key = getEntityKey();
+    if (!key) {
+        container.html('<div style="text-align:center; opacity:0.5; padding:20px; font-size:12px;">Open a character or group chat to give its world a soul.</div>');
+        return;
+    }
+
+    const pal = getPalette();
+    let html = `<div style="font-size:12px; margin-bottom:8px;"><b>Soul of ${escapeHtml(getEntityName())}</b>${pal ? ` <span style="opacity:0.5; font-size:10px;">compiled ${pal.compiledAt ? new Date(pal.compiledAt).toLocaleDateString() : ''}</span>` : ''}</div>`;
+
+    if (soulDraft) {
+        html += renderPaletteCard(soulDraft, true);
+    } else if (pal) {
+        html += renderPaletteCard(pal, false);
+        if (soulShowInterview) {
+            html += `<div style="margin-top:10px; border-top:1px solid var(--SmartThemeBorderColor, #333); padding-top:8px;">${renderInterviewForm(pal)}</div>`;
+        }
+    } else {
+        html += `<div style="font-size:11px; opacity:0.7; margin-bottom:8px;">Six questions, answered once. Don't describe how prose should be written — describe what's <i>true here</i>. The compiler only weights your existing library; your phrasing is the signal.</div>`;
+        html += renderInterviewForm(null);
+    }
+
+    container.html(html);
+    bindSoulHandlers(container);
+}
+
+function collectAnswers(container) {
+    const answers = {};
+    container.find('.voice-soul-answer').each(function () {
+        const q = $(this).data('q');
+        const v = $(this).val().trim();
+        if (v) answers[q] = v;
+    });
+    return answers;
+}
+
+function bindSoulHandlers(container) {
+    container.find('#voice-soul-compile').on('click', async function () {
+        if (soulCompiling) return;
+        const answers = collectAnswers(container);
+        if (!Object.keys(answers).length) {
+            toastr.warning('Answer at least one question first', '🎙️ Voice Soul');
+            return;
+        }
+        extensionSettings.paletteCompileProfile = container.find('#voice-soul-profile').val() || 'current';
+        extensionSettings.paletteTokenBudget = Number(container.find('#voice-soul-budget').val()) || 2000;
+        saveSettings();
+
+        soulCompiling = true;
+        renderSoulTab();
+        try {
+            const compiled = await compilePalette(answers);
+            soulDraft = {
+                ...compiled,
+                answers,
+                world: getEntityName(),
+                flavorMode: getPalette()?.flavorMode || 'always',
+                compiledAt: Date.now(),
+                version: 1,
+            };
+            toastr.success('Palette compiled — review and save', '🎙️ Voice Soul');
+        } catch (e) {
+            console.error('[Voice] Palette compile failed:', e);
+            toastr.error(String(e?.message || e), '🎙️ Voice Soul', { timeOut: 8000 });
+        } finally {
+            soulCompiling = false;
+            renderSoulTab();
+        }
+    });
+
+    container.find('#voice-soul-save').on('click', function () {
+        if (!soulDraft) return;
+        // pull any flavor edits made on the draft card
+        const flavor = [];
+        container.find('.voice-soul-flavor').each(function () {
+            const v = $(this).val().trim();
+            if (v) flavor.push(v.slice(0, 110));
+        });
+        soulDraft.flavor = flavor.slice(0, 2);
+        setPalette(soulDraft);
+        soulDraft = null;
+        soulShowInterview = false;
+        toastr.success('Soul saved for this world', '🎙️ Voice Soul');
+        renderSoulTab();
+        updateFABIndicator();
+    });
+
+    container.find('#voice-soul-discard').on('click', function () {
+        soulDraft = null;
+        renderSoulTab();
+    });
+
+    container.find('#voice-soul-edit').on('click', function () {
+        soulShowInterview = !soulShowInterview;
+        renderSoulTab();
+    });
+
+    container.find('#voice-soul-delete').on('click', function () {
+        deletePalette();
+        soulDraft = null;
+        soulShowInterview = false;
+        toastr.info('Palette deleted', '🎙️ Voice Soul');
+        renderSoulTab();
+    });
+
+    container.find('#voice-soul-apply').on('click', function () {
+        if (applySoulStack()) {
+            toastr.success('Soul stack applied', '🎙️ Voice');
+            renderAll();
+            updateFABIndicator();
+        } else {
+            toastr.warning('No positive weights to apply', '🎙️ Voice Soul');
+        }
+    });
+
+    container.find('#voice-soul-flavormode').on('change', function () {
+        const pal = getPalette();
+        if (!pal) return;
+        pal.flavorMode = $(this).val();
+        setPalette(pal);
+    });
+
+    container.find('#voice-soul-default').on('change', function () {
+        extensionSettings.useSoulDefault = $(this).prop('checked');
+        saveSettings();
+    });
+
+    // live flavor edits on a SAVED palette persist directly
+    if (!soulDraft) {
+        container.find('.voice-soul-flavor').on('change', function () {
+            const pal = getPalette();
+            if (!pal) return;
+            const flavor = [];
+            container.find('.voice-soul-flavor').each(function () {
+                const v = $(this).val().trim();
+                if (v) flavor.push(v.slice(0, 110));
+            });
+            pal.flavor = flavor.slice(0, 2);
+            setPalette(pal);
+        });
     }
 }
 

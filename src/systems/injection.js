@@ -3,6 +3,7 @@ import { setExtensionPrompt, extension_prompt_types } from '../../../../../../sc
 import { INJECTION_ID, TIERS } from '../core/config.js';
 import { chatState, extensionSettings } from '../core/state.js';
 import { getProfile } from './library.js';
+import { getPalette, computeSoulStack, shouldIncludeFlavor, markFlavorInjected } from './palette.js';
 
 /**
  * Build the injection string from the current active selections.
@@ -11,16 +12,32 @@ import { getProfile } from './library.js';
  * Target: ~30-80 tokens total. Lean, surgical, scene-shaped.
  */
 export function buildInjection() {
-    const register = getProfile(TIERS.REGISTER, chatState.activeRegister);
-    const tempo = getProfile(TIERS.TEMPO, chatState.activeTempo);
-    const texture = getProfile(TIERS.TEXTURE, chatState.activeTexture);
+    let register = getProfile(TIERS.REGISTER, chatState.activeRegister);
+    let tempo = getProfile(TIERS.TEMPO, chatState.activeTempo);
+    let texture = getProfile(TIERS.TEXTURE, chatState.activeTexture);
 
-    if (!register && !tempo && !texture) return '';
+    const palette = getPalette();
+
+    // Soul default: when nothing is active, the world's soul stack fills in.
+    // An explicit pick or stack always wins — this only shapes the default.
+    if (!register && !tempo && !texture && palette && extensionSettings.useSoulDefault) {
+        const soul = computeSoulStack(palette);
+        register = getProfile(TIERS.REGISTER, soul.register);
+        tempo = getProfile(TIERS.TEMPO, soul.tempo);
+        texture = getProfile(TIERS.TEXTURE, soul.texture);
+    }
+
+    if (!register && !tempo && !texture && !(palette?.flavor?.length)) return '';
 
     const parts = [];
 
     // Header
     parts.push('[VOICE DIRECTIVE]');
+
+    // World soul flavor (≤2 lines, ≤25 tokens)
+    if (palette && shouldIncludeFlavor()) {
+        parts.push(`World soul: ${palette.flavor.join(' ')}`);
+    }
 
     if (register) {
         parts.push(`Scene register — ${register.name}: ${register.injection}`);
@@ -33,6 +50,10 @@ export function buildInjection() {
     if (texture) {
         parts.push(`Prose texture — ${texture.name}: ${texture.injection}`);
     }
+
+    // Nothing actually made it in (e.g. palette present but flavor off,
+    // no active picks) — inject nothing rather than an empty shell.
+    if (parts.length === 1) return '';
 
     parts.push('[/VOICE DIRECTIVE]');
 
@@ -54,6 +75,11 @@ export function injectVoice() {
     if (!injection) {
         clearInjection();
         return;
+    }
+
+    // Track flavor delivery for sceneChange mode
+    if (injection.includes('World soul:')) {
+        markFlavorInjected();
     }
 
     setExtensionPrompt(
