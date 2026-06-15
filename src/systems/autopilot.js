@@ -152,6 +152,7 @@ function applySceneStack(sceneType) {
 
     chatState.activeRegister = reg ? effective.register : null;
     chatState.activeTempo = tmp ? effective.tempo : null;
+    chatState.baseTempo = tmp ? effective.tempo : null; // scene's base pace, before VAD modulation
     chatState.activeTexture = tex ? effective.texture : null;
     chatState.activeStackId = null;
     saveChatState();
@@ -196,4 +197,35 @@ export function runAutopilot() {
         saveChatState(); // still persist lastAutoScene
     }
     return applied;
+}
+
+// ─── VAD tempo modulation ─────────────────────────────────────────────────────
+// Emotion controls DELIVERY (pace); the scene controls everything else — "words
+// stay theirs, delivery shifts under pressure." Runs every generation (unlike
+// autopilot's scene-change gate) so tempo tracks the character's arousal turn to
+// turn, reverting to the scene's base tempo when arousal is neutral. Reads Codex's
+// VAD via CodexAPI and no-ops if Codex/VAD is absent. Active only while autopilot
+// is on and not manually paused, so it never stomps a hand-picked tempo.
+const AROUSAL_TEMPO = { 2: 'pulp', 1: 'staccato', '-1': 'sustained', '-2': 'diminuendo' };
+
+export function applyVadTempo() {
+    if (extensionSettings.autopilot !== true) return false;
+    if (chatState.autoPaused === true) return false;
+
+    const api = window.CodexAPI;
+    if (!api || api.isActive?.() === false || typeof api.getEmotionalState !== 'function') return false;
+
+    let vad;
+    try { vad = api.getEmotionalState(); } catch { return false; }
+    if (!vad) return false;
+
+    const a = Math.max(-2, Math.min(2, Math.round(Number(vad.arousal) || 0)));
+    // Neutral arousal → revert to the scene's base pace.
+    const target = AROUSAL_TEMPO[a] || chatState.baseTempo || null;
+    if (!target || target === chatState.activeTempo) return false;
+    if (!getProfile(TIERS.TEMPO, target)) return false; // not in library — leave as-is
+
+    chatState.activeTempo = target;
+    saveChatState();
+    return true;
 }
