@@ -31,7 +31,7 @@ import { DEFAULT_STACKS } from './src/core/config.js';
 
 // Systems
 import { injectVoice, clearInjection } from './src/systems/injection.js';
-import { runAutopilot } from './src/systems/autopilot.js';
+import { runAutopilot, applyVadTempo } from './src/systems/autopilot.js';
 import { createFAB, createPanel, renderAll, updateFABIndicator, destroyUI } from './src/systems/ui.js';
 
 // ═══════════════════════════════════════
@@ -109,6 +109,15 @@ function onGenerationStarted() {
             }
         } catch (e) {
             console.warn('[Voice] Autopilot error (continuing with current stack):', e);
+        }
+        // VAD: let the character's arousal modulate pace this generation.
+        try {
+            if (applyVadTempo()) {
+                renderAll();
+                updateFABIndicator();
+            }
+        } catch (e) {
+            console.warn('[Voice] VAD tempo error (continuing):', e);
         }
         injectVoice();
     }
