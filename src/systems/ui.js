@@ -46,56 +46,94 @@ export function createFAB() {
     `);
 
     $('body').append(fab);
-    fab.on('click', togglePanel);
-    makeFABDraggable(fab[0]);
+    makeFABInteractive(fab[0]);
 }
 
-function makeFABDraggable(el) {
-    let isDragging = false;
+// Unified tap + drag for the FAB.
+// We do NOT rely on the synthetic `click` event (flaky on mobile after any
+// finger movement). Instead we detect the tap ourselves on touchend/mouseup
+// and preventDefault on touchend to suppress the synthetic click entirely.
+function makeFABInteractive(el) {
+    const DRAG_THRESHOLD = 6; // px of movement before it counts as a drag, not a tap
+    let active = false;
     let wasDragged = false;
     let startX, startY, startTop, startRight;
 
-    el.addEventListener('touchstart', (e) => {
-        const touch = e.touches[0];
-        startX = touch.clientX;
-        startY = touch.clientY;
+    function begin(x, y) {
         const rect = el.getBoundingClientRect();
+        startX = x;
+        startY = y;
         startTop = rect.top;
         startRight = window.innerWidth - rect.right;
-        isDragging = true;
+        active = true;
         wasDragged = false;
+    }
+
+    // Returns true if this movement is (or has become) a drag.
+    function move(x, y) {
+        if (!active) return false;
+        const dx = x - startX;
+        const dy = y - startY;
+        if (!wasDragged && Math.abs(dx) < DRAG_THRESHOLD && Math.abs(dy) < DRAG_THRESHOLD) {
+            return false;
+        }
+        wasDragged = true;
+        const newTop = Math.max(0, startTop + dy);
+        const newRight = Math.max(0, startRight - dx);
+        requestAnimationFrame(() => {
+            el.style.top = `${newTop}px`;
+            el.style.right = `${newRight}px`;
+        });
+        return true;
+    }
+
+    function end() {
+        if (!active) return;
+        active = false;
+        if (wasDragged) {
+            extensionSettings.fabPosition = { top: el.style.top, right: el.style.right };
+            saveSettings();
+        } else {
+            togglePanel(); // clean tap → toggle, every time
+        }
+    }
+
+    // ── Touch (mobile) ──
+    el.addEventListener('touchstart', (e) => {
+        const t = e.touches[0];
+        begin(t.clientX, t.clientY);
     }, { passive: true });
 
     el.addEventListener('touchmove', (e) => {
-        if (!isDragging) return;
-        const touch = e.touches[0];
-        const dx = touch.clientX - startX;
-        const dy = touch.clientY - startY;
-
-        if (Math.abs(dx) > 5 || Math.abs(dy) > 5) wasDragged = true;
-        if (!wasDragged) return;
-
-        e.preventDefault();
-        const newTop = startTop + dy;
-        const newRight = startRight - dx;
-
-        requestAnimationFrame(() => {
-            el.style.top = `${Math.max(0, newTop)}px`;
-            el.style.right = `${Math.max(0, newRight)}px`;
-        });
+        const t = e.touches[0];
+        if (move(t.clientX, t.clientY)) e.preventDefault();
     }, { passive: false });
 
-    el.addEventListener('touchend', () => {
-        isDragging = false;
-        if (wasDragged) {
-            extensionSettings.fabPosition = {
-                top: el.style.top,
-                right: el.style.right
-            };
-            saveSettings();
-            // Prevent click from firing after drag
-            el.addEventListener('click', (e) => e.stopImmediatePropagation(), { once: true, capture: true });
-        }
+    el.addEventListener('touchend', (e) => {
+        // Kill the synthetic mouse click that would otherwise fire after this.
+        e.preventDefault();
+        end();
+    }, { passive: false });
+
+    el.addEventListener('touchcancel', () => {
+        active = false;
+        wasDragged = false;
+    });
+
+    // ── Mouse (desktop) ── synthetic clicks are suppressed above, so this
+    // only runs for real mouse input and won't double-fire with touch.
+    el.addEventListener('mousedown', (e) => {
+        if (e.button !== 0) return;
+        e.preventDefault();
+        begin(e.clientX, e.clientY);
+        const onMove = (ev) => move(ev.clientX, ev.clientY);
+        const onUp = () => {
+            document.removeEventListener('mousemove', onMove);
+            document.removeEventListener('mouseup', onUp);
+            end();
+        };
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onUp);
     });
 }
 
@@ -251,15 +289,54 @@ function switchTab(tabName) {
     }
 }
 
+// Holds the bound outside-dismiss handler so we can remove it on close.
+let outsidePointerHandler = null;
+
+function bindOutsideDismiss() {
+    if (outsidePointerHandler) return;
+    outsidePointerHandler = (e) => {
+        const panel = document.getElementById('voice-panel');
+        const fab = document.getElementById('voice-fab');
+        if (!panel) return;
+        // Ignore taps inside the panel itself...
+        if (panel.contains(e.target)) return;
+        // ...and on the FAB, which runs its own toggle on touchend/mouseup.
+        if (fab && fab.contains(e.target)) return;
+        closePanel();
+    };
+    // Defer one tick so the very tap that opened the panel can't close it.
+    setTimeout(() => {
+        if (!outsidePointerHandler) return;
+        document.addEventListener('touchstart', outsidePointerHandler, { passive: true });
+        document.addEventListener('mousedown', outsidePointerHandler, true);
+    }, 0);
+}
+
+function unbindOutsideDismiss() {
+    if (!outsidePointerHandler) return;
+    document.removeEventListener('touchstart', outsidePointerHandler, { passive: true });
+    document.removeEventListener('mousedown', outsidePointerHandler, true);
+    outsidePointerHandler = null;
+}
+
+export function openPanel() {
+    $('#voice-panel').show();
+    setIsPanelOpen(true);
+    renderAll();
+    bindOutsideDismiss();
+}
+
+export function closePanel() {
+    $('#voice-panel').hide();
+    setIsPanelOpen(false);
+    unbindOutsideDismiss();
+}
+
 export function togglePanel() {
-    const panel = $('#voice-panel');
-    if (panel.is(':visible')) {
-        panel.hide();
-        setIsPanelOpen(false);
+    if ($('#voice-panel').is(':visible')) {
+        closePanel();
     } else {
-        panel.show();
-        setIsPanelOpen(true);
-        renderAll();
+        openPanel();
     }
 }
 
@@ -869,6 +946,7 @@ function bindSoulHandlers(container) {
 // ═══════════════════════════════════════
 
 export function destroyUI() {
+    unbindOutsideDismiss();
     $('#voice-fab').remove();
     $('#voice-panel').remove();
     $('#voice-save-dialog').remove();
