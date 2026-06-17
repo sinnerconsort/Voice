@@ -100,6 +100,23 @@ export function initStacks(defaultStacks) {
     }
 }
 
+/**
+ * Initialize the prose-floor groups from defaults if empty. Idempotent: seeds
+ * both fresh installs and existing ones (where loadSettings merged in the
+ * default { enabled, groups: [] } shell). Deep-copied so edits never mutate the
+ * shared defaults array.
+ */
+export function initFloor(defaultGroups) {
+    if (!extensionSettings.proseFloor || typeof extensionSettings.proseFloor !== 'object') {
+        extensionSettings.proseFloor = { enabled: true, groups: [] };
+    }
+    const f = extensionSettings.proseFloor;
+    if (!Array.isArray(f.groups) || f.groups.length === 0) {
+        f.groups = JSON.parse(JSON.stringify(defaultGroups));
+        saveSettings();
+    }
+}
+
 // ═══════════════════════════════════════
 // MIGRATIONS
 // ═══════════════════════════════════════

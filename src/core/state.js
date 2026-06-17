@@ -26,6 +26,12 @@ export let extensionSettings = {
     paletteCompileProfile: 'current',
     paletteTokenBudget: 2000,
 
+    // Prose Floor: always-on craft rules injected beneath the scene picks
+    proseFloor: {
+        enabled: true,
+        groups: []   // seeded from data/floor.js via initFloor()
+    },
+
     // UI state
     panelOpen: false,
     activeTab: 'stacks',
