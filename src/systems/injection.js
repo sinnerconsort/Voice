@@ -4,14 +4,13 @@ import { INJECTION_ID, TIERS } from '../core/config.js';
 import { chatState, extensionSettings } from '../core/state.js';
 import { getProfile } from './library.js';
 import { getPalette, computeSoulStack, shouldIncludeFlavor, markFlavorInjected } from './palette.js';
+import { buildFloorInjection } from './floor.js';
 
 /**
- * Build the injection string from the current active selections.
- * Returns empty string if nothing is active.
- *
- * Target: ~30-80 tokens total. Lean, surgical, scene-shaped.
+ * Build the per-scene [VOICE DIRECTIVE] block from the active selections.
+ * Returns '' when nothing scene-level is active.
  */
-export function buildInjection() {
+function buildDirective() {
     let register = getProfile(TIERS.REGISTER, chatState.activeRegister);
     let tempo = getProfile(TIERS.TEMPO, chatState.activeTempo);
     let texture = getProfile(TIERS.TEXTURE, chatState.activeTexture);
@@ -58,6 +57,19 @@ export function buildInjection() {
     parts.push('[/VOICE DIRECTIVE]');
 
     return parts.join('\n');
+}
+
+/**
+ * The full Voice injection: the per-scene directive (if any) plus the always-on
+ * prose floor (if enabled). Either can be empty; the floor stands alone when no
+ * scene voice is active. Returns '' only when both are empty.
+ *
+ * Target: ~30-80 tokens for the directive, ~20-60 for a full floor.
+ */
+export function buildInjection() {
+    const directive = buildDirective();
+    const floor = buildFloorInjection();
+    return [directive, floor].filter(Boolean).join('\n');
 }
 
 /**

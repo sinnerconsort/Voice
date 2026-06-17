@@ -9,6 +9,7 @@ import {
 } from './stacks.js';
 import { getInjectionPreview } from './injection.js';
 import { getAutopilotStatus, setAutopilot, isAutopilotAvailable } from './autopilot.js';
+import { renderFloorTab } from './floor.js';
 import {
     SOUL_QUESTIONS, getPalette, setPalette, deletePalette, getEntityName, getEntityKey,
     compilePalette, computeSoulStack, applySoulStack, getWeight, listConnectionProfiles
@@ -188,6 +189,7 @@ export function createPanel() {
                 <div class="voice-tab" data-tab="picker" style="flex:1; text-align:center; padding:8px; cursor:pointer; font-size:12px; border-bottom: 2px solid transparent;">🎨 Picker</div>
                 <div class="voice-tab" data-tab="preview" style="flex:1; text-align:center; padding:8px; cursor:pointer; font-size:12px; border-bottom: 2px solid transparent;">👁️ Preview</div>
                 <div class="voice-tab" data-tab="soul" style="flex:1; text-align:center; padding:8px; cursor:pointer; font-size:12px; border-bottom: 2px solid transparent;">✨ Soul</div>
+                <div class="voice-tab" data-tab="floor" style="flex:1; text-align:center; padding:8px; cursor:pointer; font-size:12px; border-bottom: 2px solid transparent;">🧱 Floor</div>
             </div>
 
             <!-- Tab Content -->
@@ -200,6 +202,7 @@ export function createPanel() {
                 <div id="voice-tab-picker" style="display:none;"></div>
                 <div id="voice-tab-preview" style="display:none;"></div>
                 <div id="voice-tab-soul" style="display:none;"></div>
+                <div id="voice-tab-floor" style="display:none;"></div>
             </div>
         </div>
     `);
@@ -277,7 +280,7 @@ function switchTab(tabName) {
         'opacity': '1'
     });
 
-    $('#voice-tab-stacks, #voice-tab-picker, #voice-tab-preview, #voice-tab-soul').hide();
+    $('#voice-tab-stacks, #voice-tab-picker, #voice-tab-preview, #voice-tab-soul, #voice-tab-floor').hide();
     $(`#voice-tab-${tabName}`).show();
 
     // Render the active tab
@@ -286,6 +289,7 @@ function switchTab(tabName) {
         case 'picker':  renderPickerTab(); break;
         case 'preview': renderPreviewTab(); break;
         case 'soul':    renderSoulTab(); break;
+        case 'floor':   renderFloorTab(); break;
     }
 }
 
@@ -628,8 +632,8 @@ function renderPreviewTab() {
 
     let html = '';
 
-    if (combo.isEmpty) {
-        html = `<div style="text-align:center; opacity:0.5; padding:20px; font-size:12px;">No voice active. Pick a stack or choose profiles in the Picker tab.</div>`;
+    if (!preview.tokens) {
+        html = `<div style="text-align:center; opacity:0.5; padding:20px; font-size:12px;">No voice active. Pick a stack or profiles, or enable the Prose Floor.</div>`;
     } else {
         html = `
             <div style="margin-bottom: 8px; font-size: 11px; opacity: 0.6;">
@@ -666,6 +670,7 @@ export function renderAll() {
         case 'picker':  renderPickerTab(); break;
         case 'preview': renderPreviewTab(); break;
         case 'soul':    renderSoulTab(); break;
+        case 'floor':   renderFloorTab(); break;
     }
 }
 
