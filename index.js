@@ -1,6 +1,6 @@
 // ═══════════════════════════════════════════════════════════════
 // VOICE — Prose Direction Extension for SillyTavern
-// v1.2.0 — soul palettes (per-world calibration)
+// v1.3.0 — prose floor (always-on craft rules) + soul palettes
 //
 // Three-tier prose direction: Register + Tempo + Texture
 // Manual selection with saved stack combos.
@@ -21,13 +21,14 @@ import {
 // Core
 import { EXT_NAME, EXT_ID } from './src/core/config.js';
 import { extensionSettings, chatState } from './src/core/state.js';
-import { loadSettings, saveSettings, loadChatState, saveChatState, initLibraries, initStacks, migrateLibraries } from './src/core/persistence.js';
+import { loadSettings, saveSettings, loadChatState, saveChatState, initLibraries, initStacks, initFloor, migrateLibraries } from './src/core/persistence.js';
 
 // Data (defaults)
 import { DEFAULT_REGISTERS } from './src/data/registers.js';
 import { DEFAULT_TEMPOS } from './src/data/tempos.js';
 import { DEFAULT_TEXTURES } from './src/data/textures.js';
 import { DEFAULT_STACKS } from './src/core/config.js';
+import { DEFAULT_FLOOR_GROUPS } from './src/data/floor.js';
 
 // Systems
 import { injectVoice, clearInjection } from './src/systems/injection.js';
@@ -147,6 +148,7 @@ jQuery(async () => {
         try {
             initLibraries(DEFAULT_REGISTERS, DEFAULT_TEMPOS, DEFAULT_TEXTURES);
             initStacks(DEFAULT_STACKS);
+            initFloor(DEFAULT_FLOOR_GROUPS);
             migrateLibraries(DEFAULT_REGISTERS, DEFAULT_TEMPOS, DEFAULT_TEXTURES, DEFAULT_STACKS);
         } catch (e) {
             console.error(`[${EXT_NAME}] Library init failed:`, e);
@@ -199,7 +201,8 @@ jQuery(async () => {
                 textures: extensionSettings.textures
             }),
             getStacks: () => extensionSettings.stacks,
-            getPalettes: () => extensionSettings.palettes
+            getPalettes: () => extensionSettings.palettes,
+            getFloor: () => extensionSettings.proseFloor
         };
 
         console.log(`[${EXT_NAME}] ✅ Loaded successfully`);
