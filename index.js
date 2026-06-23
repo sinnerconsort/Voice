@@ -1,6 +1,6 @@
 // ═══════════════════════════════════════════════════════════════
 // VOICE — Prose Direction Extension for SillyTavern
-// v1.3.0 — prose floor (always-on craft rules) + soul palettes
+// v1.3.1 — VoiceAPI (read surface for other extensions) + prose floor
 //
 // Three-tier prose direction: Register + Tempo + Texture
 // Manual selection with saved stack combos.
@@ -19,7 +19,7 @@ import {
 } from '../../../../script.js';
 
 // Core
-import { EXT_NAME, EXT_ID } from './src/core/config.js';
+import { EXT_NAME, EXT_ID, EXT_VERSION, TIERS } from './src/core/config.js';
 import { extensionSettings, chatState } from './src/core/state.js';
 import { loadSettings, saveSettings, loadChatState, saveChatState, initLibraries, initStacks, initFloor, migrateLibraries } from './src/core/persistence.js';
 
@@ -31,7 +31,10 @@ import { DEFAULT_STACKS } from './src/core/config.js';
 import { DEFAULT_FLOOR_GROUPS } from './src/data/floor.js';
 
 // Systems
-import { injectVoice, clearInjection } from './src/systems/injection.js';
+import { injectVoice, clearInjection, buildInjection, buildDirective } from './src/systems/injection.js';
+import { buildFloorInjection } from './src/systems/floor.js';
+import { getActiveCombo } from './src/systems/stacks.js';
+import { getProfile } from './src/systems/library.js';
 import { runAutopilot, applyVadTempo } from './src/systems/autopilot.js';
 import { createFAB, createPanel, renderAll, updateFABIndicator, destroyUI } from './src/systems/ui.js';
 
@@ -203,6 +206,47 @@ jQuery(async () => {
             getStacks: () => extensionSettings.stacks,
             getPalettes: () => extensionSettings.palettes,
             getFloor: () => extensionSettings.proseFloor
+        };
+
+        // ── Public read API for the suite (Palimpsest, Codex, Chronicler…) ──
+        // Mirrors LexiconAPI/CodexAPI conventions: isActive() + camelCase getters.
+        // All getters are defensive and return '' / safe shapes, never throw.
+        window.VoiceAPI = {
+            version: EXT_VERSION,
+
+            // Is Voice enabled and able to contribute direction this turn?
+            isActive: () => extensionSettings.enabled === true,
+
+            // Full prose direction for this turn: scene directive + always-on
+            // floor. '' when nothing is active. This is the string a consumer
+            // appends to its own generation prompt.
+            getInjection: () => { try { return buildInjection() || ''; } catch (e) { return ''; } },
+
+            // Just the per-scene [VOICE DIRECTIVE] block ('' if no scene voice).
+            getDirective: () => { try { return buildDirective() || ''; } catch (e) { return ''; } },
+
+            // Just the always-on [PROSE FLOOR] block ('' if floor off/empty).
+            getFloor: () => { try { return buildFloorInjection() || ''; } catch (e) { return ''; } },
+
+            // Structured snapshot for display/logic (names + ids, never throws).
+            getActiveVoice: () => {
+                try {
+                    const combo = getActiveCombo();
+                    const reg = getProfile(TIERS.REGISTER, combo.register);
+                    const tmp = getProfile(TIERS.TEMPO, combo.tempo);
+                    const tex = getProfile(TIERS.TEXTURE, combo.texture);
+                    return {
+                        isEmpty: !!combo.isEmpty,
+                        stackId: combo.stackId || null,
+                        register: reg ? { id: reg.id, name: reg.name } : null,
+                        tempo:    tmp ? { id: tmp.id, name: tmp.name } : null,
+                        texture:  tex ? { id: tex.id, name: tex.name } : null,
+                        floorEnabled: !!(extensionSettings.proseFloor && extensionSettings.proseFloor.enabled)
+                    };
+                } catch (e) {
+                    return { isEmpty: true, stackId: null, register: null, tempo: null, texture: null, floorEnabled: false };
+                }
+            }
         };
 
         console.log(`[${EXT_NAME}] ✅ Loaded successfully`);
