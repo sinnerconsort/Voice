@@ -10,7 +10,7 @@ import { buildFloorInjection } from './floor.js';
  * Build the per-scene [VOICE DIRECTIVE] block from the active selections.
  * Returns '' when nothing scene-level is active.
  */
-function buildDirective() {
+export function buildDirective() {
     let register = getProfile(TIERS.REGISTER, chatState.activeRegister);
     let tempo = getProfile(TIERS.TEMPO, chatState.activeTempo);
     let texture = getProfile(TIERS.TEXTURE, chatState.activeTexture);
